@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub in Pale Moon
 // @namespace    https://github.com/SeaHOH
-// @version      0.1.2
+// @version      0.1.3
 // @description  Tweaks for GitHub work in Pale Moon (v33.*) browser.
 // @author       SeaHOH
 // @license      MIT
@@ -83,6 +83,53 @@
     Turbo.session.stop();
     Turbo.cache.clear();
   });
+
+
+  /*
+   Create issues fails (dqsa) in new experience, caused by <dialog> tag is not supported.
+   Replace CSS pseudo-class `:modal` with attribute `[aria-modal="true"]`.
+  */
+  const {querySelector:eqs, querySelectorAll:eqsa, closest:ecs, matches:ems} = Element.prototype;
+  const {querySelector:dqs, querySelectorAll:dqsa} = Document.prototype;
+  //const {querySelector:dfqs, querySelectorAll:dfqsa} = DocumentFragment.prototype;
+  function queryFunc(query, selector) {
+    try {
+      return query.call(this, selector);
+    } catch(e) {
+      log(selector, this);
+      if (selector.includes(':modal')) {
+        return query.call(this, selector.replaceAll(':modal', '[aria-modal="true"]'));
+      } else {
+        throw e;
+      }
+    }
+  }
+  //Element.prototype.querySelector = function querySelector(selector) {
+  //  return queryFunc.call(this, eqs, selector);
+  //}
+  //Element.prototype.querySelectorAll = function querySelectorAll(selector) {
+  //  return queryFunc.call(this, eqsa, selector);
+  //}
+  //Element.prototype.closest = function closest(selector) {
+  //  return queryFunc.call(this, ecs, selector);
+  //}
+  Element.prototype.matches = function matches(selector) {
+    return queryFunc.call(this, ems, selector);
+  }
+  //Document.prototype.querySelector = function querySelector(selector) {
+  //  return queryFunc.call(this, dqs, selector);
+  //}
+  if (/^\/[^/]+\/[^/]+\/issues/.test(location.pathname)) {
+    Document.prototype.querySelectorAll = function querySelectorAll(selector) {
+      return queryFunc.call(this, dqsa, selector);
+    }
+  }
+  //DocumentFragment.prototype.querySelector = function querySelector(selector) {
+  //  return queryFunc.call(this, dfqs, selector);
+  //}
+  //DocumentFragment.prototype.querySelectorAll = function querySelectorAll(selector) {
+  //  return queryFunc.call(this, dfqsa, selector);
+  //}
 
 
   /*
